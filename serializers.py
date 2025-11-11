@@ -1,10 +1,10 @@
-import app
+from utils.serializers import ma
 from flask_marshmallow import Marshmallow
 from models.users import Users
 # from models.books import Books
 from utils.db import db
 
-ma = Marshmallow(app)
+# ma = Marshmallow(app)
 
 # class BookSchema(ma.SQLAlchemyAutoSchema):
 #     class Meta:

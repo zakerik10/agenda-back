@@ -14,7 +14,14 @@ users = Blueprint("books", __name__)
 @users.route('/register', methods=['POST'])
 def register():
     """Ruta para registrar un nuevo Dueño de Agenda."""    
-    new_user_instance = user_instance(request.get_json())
+    try:
+        new_user_instance = user_schema.load(request.get_json()) 
+        
+    except ValidationError as err:
+        return jsonify({"message": "Error de validación", "errors": err.messages}), 400
+    except Exception as e:
+        # 3. Otros errores, como fallos de conexión a BD
+        return jsonify({"message": f"Error desconocido: {str(e)}"}), 500
     
     print(f"Averrr: {new_user_instance}")
     
@@ -32,8 +39,8 @@ def register():
     new_user = Users(username=username, mail=mail, phone=phone)
     new_user.set_password(password)
     
-    # db.session.add(new_user)
-    # db.session.commit()
+    db.session.add(new_user)
+    db.session.commit()
     
     return jsonify({"message": f"Usuario {username} registrado exitosamente. Ahora puede iniciar sesión."}), 201
 
@@ -97,14 +104,3 @@ def agendar_turno_publico():
         "detalles": "El cliente no necesita iniciar sesión."
     }), 200
     
-    
-def user_instance(json_data):
-    try:
-        user_instance = user_schema.load(json_data) 
-        return user_instance
-        
-    except ValidationError as err:
-        return jsonify({"msg": "Error de validación", "errors": err.messages}), 400
-    except Exception as e:
-        # 3. Otros errores, como fallos de conexión a BD
-        return jsonify({"msg": f"Error desconocido: {str(e)}"}), 500
