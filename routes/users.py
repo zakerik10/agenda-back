@@ -35,6 +35,9 @@ def register():
 
     if Users.query.filter_by(username=new_user_instance.username ).first():
         return jsonify({"message": "El usuario ya existe"}), 409
+    
+    if Users.query.filter_by(mail=new_user_instance.mail ).first():
+        return jsonify({"message": "El mail ya existe"}), 409
 
     new_user = Users(username=username, mail=mail, phone=phone)
     new_user.set_password(password)

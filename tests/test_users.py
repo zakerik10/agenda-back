@@ -73,7 +73,7 @@ class UsersAuthTestCase(unittest.TestCase):
             self.assertTrue(user.check_password('securepassword'))
 
     def test_registration_duplicate_username(self):
-        """Prueba que el registro falla con un nombre de usuario duplicado (400)."""
+        """Prueba que el registro falla con un nombre de usuario duplicado (409)."""
         response = self.client.post(
             '/register',
             data=json.dumps({
@@ -87,6 +87,22 @@ class UsersAuthTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 409)
         data = response.get_json()
         self.assertIn("El usuario ya existe", data['message'])
+        
+    def test_registration_duplicate_mail(self):
+        """Prueba que el registro falla con un mail duplicado (409)."""
+        response = self.client.post(
+            '/register',
+            data=json.dumps({
+                "username": "newUser", 
+                "password": "securepassword",
+                "mail": "test@example.com", # Ya existe de setUp()
+                "phone": "12345678"
+            }),
+            content_type='application/json'
+        )
+        self.assertEqual(response.status_code, 409)
+        data = response.get_json()
+        self.assertIn("El mail ya existe", data['message'])
 
     def test_registration_missing_password(self):
         """Prueba que el registro falla si falta la contraseña (400 - ValidationError)."""
@@ -103,6 +119,38 @@ class UsersAuthTestCase(unittest.TestCase):
         data = response.get_json()
         self.assertIn("Error de validación", data['message'])
         self.assertIn("password", data['errors'])
+        
+    def test_registration_missing_username(self):
+        """Prueba que el registro falla si falta el nombre de usuario (400 - ValidationError)."""
+        response = self.client.post(
+            '/register',
+            data=json.dumps({
+                "password": "superpassword",
+                "mail": "missing@email.com"
+                # Falta username
+            }),
+            content_type='application/json'
+        )
+        self.assertEqual(response.status_code, 400)
+        data = response.get_json()
+        self.assertIn("Error de validación", data['message'])
+        self.assertIn("username", data['errors'])
+        
+    def test_registration_missing_mail(self):
+        """Prueba que el registro falla si falta el nombre de usuario (400 - ValidationError)."""
+        response = self.client.post(
+            '/register',
+            data=json.dumps({
+                "username": "newUser",
+                "password": "superpassword"
+                # Falta mail
+            }),
+            content_type='application/json'
+        )
+        self.assertEqual(response.status_code, 400)
+        data = response.get_json()
+        self.assertIn("Error de validación", data['message'])
+        self.assertIn("mail", data['errors'])
         
     # ==========================================================================
     # PRUEBAS DE INICIO DE SESIÓN (/login)
