@@ -1,9 +1,9 @@
-from models.users import Users
 from utils.db import db
 from flask import request, jsonify, Blueprint
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 from marshmallow import ValidationError
 from serializers import *
+from sqlalchemy.exc import IntegrityError
 
 users = Blueprint("books", __name__)
 
@@ -13,39 +13,42 @@ users = Blueprint("books", __name__)
 
 @users.route('/register', methods=['POST'])
 def register():
-    """Ruta para registrar un nuevo Dueño de Agenda."""    
     try:
-        new_user_instance = user_schema.load(request.get_json()) 
+        new_user_instance = user_schema.load(request.get_json())
+        
+        username = new_user_instance.username
+        password = new_user_instance.password
+        mail = new_user_instance.mail
+        phone = new_user_instance.phone
+        
+        new_user = Users(username=username, mail=mail, phone=phone)
+        new_user.set_password(password)
+        
+        db.session.add(new_user)
+        db.session.commit()
+
+        return jsonify({"message": f"Usuario {username} registrado exitosamente. Ahora puede iniciar sesión."}), 201
+    
+    except IntegrityError as e:
+        db.session.rollback() 
+        error_detail = str(e).splitlines()[0] # Solo me que quedo con la primer linea de error_detail donde puede aclarar qué columna es la que esta repetida (usuario, mail)
+        print(error_detail)
+        if 'username' in error_detail:
+            return jsonify({"message": "El nombre de usuario ya está en uso."}), 409
+        
+        elif 'mail' in error_detail:
+            return jsonify({"message": "El correo electrónico ya está registrado."}), 409
+        
+        else:
+            return jsonify({"message": "Error de integridad desconocido."}), 500
         
     except ValidationError as err:
+        db.session.rollback()
         return jsonify({"message": "Error de validación", "errors": err.messages}), 400
+    
     except Exception as e:
-        # 3. Otros errores, como fallos de conexión a BD
+        db.session.rollback()
         return jsonify({"message": f"Error desconocido: {str(e)}"}), 500
-    
-    print(f"Averrr: {new_user_instance}")
-    
-    username = new_user_instance.username
-    password = new_user_instance.password
-    mail = new_user_instance.mail
-    phone = new_user_instance.phone        
-
-    if not username or not password:
-        return jsonify({"message": "Faltan usuario o contraseña"}), 400
-
-    if Users.query.filter_by(username=new_user_instance.username ).first():
-        return jsonify({"message": "El usuario ya existe"}), 409
-    
-    if Users.query.filter_by(mail=new_user_instance.mail ).first():
-        return jsonify({"message": "El mail ya existe"}), 409
-
-    new_user = Users(username=username, mail=mail, phone=phone)
-    new_user.set_password(password)
-    
-    db.session.add(new_user)
-    db.session.commit()
-    
-    return jsonify({"message": f"Usuario {username} registrado exitosamente. Ahora puede iniciar sesión."}), 201
 
 
 @users.route('/login', methods=['POST'])

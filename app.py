@@ -4,9 +4,8 @@ from flask_jwt_extended import JWTManager
 from config import DATABASE_CONECTION_URI, JWT_SECRET_KEY
 from flask_marshmallow import Marshmallow
 from routes.users import users
-# from routes.books import books
-# from routes.roles import roles
-# from routes.permits import permits
+from routes.clients import clients
+from routes.businesses import businesses
 from utils.db import db
 
 jwt = JWTManager()
@@ -44,7 +43,9 @@ def create_app(test_config=None):
     ma.init_app(app) # Inicializamos Marshmallow aquí
 
     # --- REGISTRO DE BLUEPRINTS ---
-    app.register_blueprint(users)
+    app.register_blueprint(users, url_prefix='/users')
+    app.register_blueprint(clients, url_prefix='/clients')
+    app.register_blueprint(businesses, url_prefix='/businesses')
     # app.register_blueprint(books)
     # app.register_blueprint(roles)
     # app.register_blueprint(permits)

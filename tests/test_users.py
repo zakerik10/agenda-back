@@ -1,8 +1,5 @@
 import unittest
 import json
-# Asume que tu 'agenda_app' es el punto de entrada principal (app.py o index.py)
-# Si tu app principal se llama 'app.py' y contiene create_app, esto funciona.
-# Si se llama 'index.py', ajusta el import: from index import create_app, db, Users
 from app import create_app
 from utils.db import db
 from models.users import Users
@@ -39,6 +36,9 @@ class UsersAuthTestCase(unittest.TestCase):
             db.session.commit()
             
             self.test_user_id = user.id
+            
+        # 5. Configurar el url base
+        self.base_url = '/users'
 
     def tearDown(self):
         """Limpieza después de cada prueba: elimina la DB en memoria."""
@@ -53,7 +53,7 @@ class UsersAuthTestCase(unittest.TestCase):
     def test_registration_success(self):
         """Prueba que el registro de un nuevo usuario es exitoso (201)."""
         response = self.client.post(
-            '/register',
+            self.base_url + '/register',
             data=json.dumps({
                 "username": "newuser",
                 "password": "securepassword",
@@ -75,7 +75,7 @@ class UsersAuthTestCase(unittest.TestCase):
     def test_registration_duplicate_username(self):
         """Prueba que el registro falla con un nombre de usuario duplicado (409)."""
         response = self.client.post(
-            '/register',
+            self.base_url + '/register',
             data=json.dumps({
                 "username": "testuser", # Ya existe de setUp()
                 "password": "securepassword",
@@ -86,12 +86,12 @@ class UsersAuthTestCase(unittest.TestCase):
         )
         self.assertEqual(response.status_code, 409)
         data = response.get_json()
-        self.assertIn("El usuario ya existe", data['message'])
+        self.assertIn("usuario", data['message'])
         
     def test_registration_duplicate_mail(self):
         """Prueba que el registro falla con un mail duplicado (409)."""
         response = self.client.post(
-            '/register',
+            self.base_url + '/register',
             data=json.dumps({
                 "username": "newUser", 
                 "password": "securepassword",
@@ -102,12 +102,12 @@ class UsersAuthTestCase(unittest.TestCase):
         )
         self.assertEqual(response.status_code, 409)
         data = response.get_json()
-        self.assertIn("El mail ya existe", data['message'])
+        self.assertIn("correo electrónico", data['message'])
 
     def test_registration_missing_password(self):
         """Prueba que el registro falla si falta la contraseña (400 - ValidationError)."""
         response = self.client.post(
-            '/register',
+            self.base_url + '/register',
             data=json.dumps({
                 "username": "missing",
                 "mail": "missing@email.com"
@@ -123,7 +123,7 @@ class UsersAuthTestCase(unittest.TestCase):
     def test_registration_missing_username(self):
         """Prueba que el registro falla si falta el nombre de usuario (400 - ValidationError)."""
         response = self.client.post(
-            '/register',
+            self.base_url + '/register',
             data=json.dumps({
                 "password": "superpassword",
                 "mail": "missing@email.com"
@@ -139,7 +139,7 @@ class UsersAuthTestCase(unittest.TestCase):
     def test_registration_missing_mail(self):
         """Prueba que el registro falla si falta el nombre de usuario (400 - ValidationError)."""
         response = self.client.post(
-            '/register',
+            self.base_url + '/register',
             data=json.dumps({
                 "username": "newUser",
                 "password": "superpassword"
@@ -159,7 +159,7 @@ class UsersAuthTestCase(unittest.TestCase):
     def get_auth_token(self, username="testuser", password="testpass123"):
         """Helper para obtener un token de acceso válido."""
         response = self.client.post(
-            '/login',
+            self.base_url + '/login',
             data=json.dumps({"username": username, "password": password}),
             content_type='application/json'
         )
@@ -173,7 +173,7 @@ class UsersAuthTestCase(unittest.TestCase):
     def test_login_wrong_password(self):
         """Prueba que el inicio de sesión falla con contraseña incorrecta (401)."""
         response = self.client.post(
-            '/login',
+            self.base_url + '/login',
             data=json.dumps({
                 "username": "testuser",
                 "password": "wrongpassword"
@@ -190,7 +190,7 @@ class UsersAuthTestCase(unittest.TestCase):
         """Prueba que la ruta protegida es accesible con un token válido (200)."""
         token = self.get_auth_token()
         response = self.client.get(
-            '/agenda_protegida',
+            self.base_url + '/agenda_protegida',
             headers={'Authorization': f'Bearer {token}'}
         )
         self.assertEqual(response.status_code, 200)
@@ -200,13 +200,13 @@ class UsersAuthTestCase(unittest.TestCase):
 
     def test_protected_route_missing_token(self):
         """Prueba que la ruta protegida falla sin token (401)."""
-        response = self.client.get('/agenda_protegida')
+        response = self.client.get(self.base_url + '/agenda_protegida')
         self.assertEqual(response.status_code, 401)
         
     def test_protected_route_invalid_token(self):
         """Prueba que la ruta protegida falla con un token inválido (401/422)."""
         response = self.client.get(
-            '/agenda_protegida',
+            self.base_url + '/agenda_protegida',
             headers={'Authorization': 'Bearer FAKE_INVALID_TOKEN'}
         )
         # 422 si el formato del token es inválido, 401 si la firma es incorrecta
@@ -219,7 +219,7 @@ class UsersAuthTestCase(unittest.TestCase):
     def test_public_route_success(self):
         """Prueba que la ruta pública funciona sin autenticación (200)."""
         response = self.client.post(
-            '/agendar_turno',
+            self.base_url + '/agendar_turno',
             data=json.dumps({
                 "nombre": "Juan Pérez",
                 "fecha_hora": "2025-11-20T10:00:00"
