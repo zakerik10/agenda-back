@@ -1,5 +1,6 @@
 from utils.db import db
 from flask import request, jsonify, Blueprint
+from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 from marshmallow import ValidationError
 from serializers import *
 from sqlalchemy.exc import IntegrityError
@@ -11,31 +12,28 @@ businesses = Blueprint("businesses", __name__)
 # ==============================================================================
 
 @businesses.route('/register', methods=['POST'])
+@jwt_required()
 def register():
-    try:
-        new_business_instance = business_schema.load(request.get_json())
+    try:        
+        new_business = business_schema.load(request.get_json())
+        new_business.id_owner = int(get_jwt_identity())
         
-        name = new_business_instance.name
-        adress = new_business_instance.adress
-        mail = new_business_instance.mail
-        phone = new_business_instance.phone
-        
-        new_user = Businesses(name=name, adress=adress, mail=mail, phone=phone)
-        
-        db.session.add(new_user)
+        db.session.add(new_business)
         db.session.commit()
 
-        return jsonify({"message": f"Negocio {name} ubicado en {adress} registrado exitosamente."}), 201
+        return jsonify({"message": f"Negocio {new_business.name} ubicado en {new_business.address} registrado exitosamente."}), 201
     
     except IntegrityError as e:
         db.session.rollback() 
         error_detail = str(e).splitlines()[0] # Solo me que quedo con la primer linea de error_detail donde puede aclarar qué columna es la que esta repetida (usuario, mail)
-        print(error_detail)
+        print("----------------------------")
+        print(str(e))
+        print("----------------------------")
         
         if 'mail' in error_detail:
             return jsonify({"message": "El correo electrónico ya está registrado."}), 409
         
-        elif 'adress' in error_detail:
+        elif 'address' in error_detail:
             return jsonify({"message": "La dirección ya está registrada."}), 409
         
         else:
@@ -43,8 +41,10 @@ def register():
         
     except ValidationError as err:
         db.session.rollback()
+        print(f"ACA FALLA BLDO {str(err)}")
         return jsonify({"message": "Error de validación", "errors": err.messages}), 400
     
     except Exception as e:
         db.session.rollback()
+        print(f"Error 500: {str(e)}")
         return jsonify({"message": f"Error desconocido: {str(e)}"}), 500

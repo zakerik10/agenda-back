@@ -191,7 +191,7 @@ class OwnersAuthTestCase(unittest.TestCase):
         token = self.get_auth_token()
         response = self.client.get(
             self.base_url + '/agenda_protegida',
-            headers={'Authorization': f'Bearer {token}'}
+            headers={'Authorization': f'{token}'}
         )
         self.assertEqual(response.status_code, 200)
         data = response.get_json()

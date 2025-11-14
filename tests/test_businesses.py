@@ -3,6 +3,8 @@ import json
 from app import create_app
 from utils.db import db
 from models.businesses import Businesses
+from models.owners import Owners
+from flask_jwt_extended import create_access_token
 
 
 class BusinessAuthTestCase(unittest.TestCase):
@@ -30,11 +32,23 @@ class BusinessAuthTestCase(unittest.TestCase):
             db.create_all()
             
             # 4. Crear usuario de prueba para login y rutas protegidas
-            business = Businesses(name='testname', adress="testadress 123", mail='test@example.com', phone='12345678')
+            owner = Owners(username='testowner', mail='test@example.com', phone='12345678')
+            owner.set_password('testpass123')
+            db.session.add(owner)
+            db.session.commit()
+            
+            business = Businesses(id_owner='1', name='testname', address="testaddress 123", mail='test@example.com', phone='12345678')
             db.session.add(business)
             db.session.commit()
             
+            raw_token = create_access_token(identity=str(owner.id_owner))
+            self.access_token = f'Bearer {raw_token}'
+            
             self.test_business_id = business.id_business
+            self.headers = {
+                'Content-Type': 'application/json',
+                'Authorization': self.access_token # Ya debe tener "Bearer " prefijado
+            }
             
         # 5. Configurar el url base
         self.base_url = '/businesses'
@@ -55,11 +69,12 @@ class BusinessAuthTestCase(unittest.TestCase):
             self.base_url + '/register',
             data=json.dumps({
                 "name": "newname",
-                "adress": "newadress 123",
+                "address": "newaddress 123",
                 "mail": "new@email.com",
                 "phone": "98765432"
             }),
-            content_type='application/json'
+            content_type='application/json',
+            headers=self.headers
         )
         self.assertEqual(response.status_code, 201)
         data = response.get_json()
@@ -76,11 +91,12 @@ class BusinessAuthTestCase(unittest.TestCase):
             self.base_url + '/register',
             data=json.dumps({
                 "name": "newUser", 
-                "adress": "newadress123",
+                "address": "newaddress123",
                 "mail": "test@example.com", # Ya existe de setUp()
                 "phone": "12345678"
             }),
-            content_type='application/json'
+            content_type='application/json',
+            headers=self.headers
         )
         self.assertEqual(response.status_code, 409)
         data = response.get_json()
@@ -92,43 +108,49 @@ class BusinessAuthTestCase(unittest.TestCase):
         response = self.business.post(
             self.base_url + '/register',
             data=json.dumps({
-                "adress": "newadress 123",
+                "id_owner": "1",
+                "address": "newaddress 123",
                 "mail": "missing@email.com"
                 # Falta name
             }),
-            content_type='application/json'
+            content_type='application/json',
+            headers=self.headers
         )
         self.assertEqual(response.status_code, 400)
         data = response.get_json()
         self.assertIn("Error de validación", data['message'])
         self.assertIn("name", data['errors'])
         
-    def test_registration_missing_adress(self):
+    def test_registration_missing_address(self):
         """Prueba que el registro falla si falta el nombre de usuario (400 - ValidationError)."""
         response = self.business.post(
             self.base_url + '/register',
             data=json.dumps({
+                "id_owner": "1",
                 "name": "nameclient",
                 "mail": "missing@email.com"
-                # Falta adress
+                # Falta address
             }),
-            content_type='application/json'
+            content_type='application/json',
+            headers=self.headers
         )
         self.assertEqual(response.status_code, 400)
         data = response.get_json()
         self.assertIn("Error de validación", data['message'])
-        self.assertIn("adress", data['errors'])    
+        self.assertIn("address", data['errors'])    
     
     def test_registration_missing_mail(self):
         """Prueba que el registro falla si falta el nombre de usuario (400 - ValidationError)."""
         response = self.business.post(
             self.base_url + '/register',
             data=json.dumps({
+                "id_owner": "1",
                 "name": "newname",
-                "adress": "newadress 123"
+                "address": "newaddress 123"
                 # Falta mail
             }),
-            content_type='application/json'
+            content_type='application/json',
+            headers=self.headers
         )
         self.assertEqual(response.status_code, 400)
         data = response.get_json()

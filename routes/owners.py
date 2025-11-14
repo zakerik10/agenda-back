@@ -64,7 +64,8 @@ def login():
     if owner and owner.check_password(password):
         # Crear un token de acceso JWT usando el ID del usuario como identidad
         access_token = create_access_token(identity=str(owner.id_owner))
-        return jsonify(access_token=access_token), 200
+        bearer_token = "Bearer " + access_token
+        return jsonify(access_token=bearer_token), 200
     
     return jsonify({"message": "Usuario o contraseña inválidos"}), 401
 
