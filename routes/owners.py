@@ -32,7 +32,7 @@ def register():
     except IntegrityError as e:
         db.session.rollback() 
         error_detail = str(e).splitlines()[0] # Solo me que quedo con la primer linea de error_detail donde puede aclarar qué columna es la que esta repetida (usuario, mail)
-        print(error_detail)
+        
         if 'username' in error_detail:
             return jsonify({"message": "El nombre de usuario ya está en uso."}), 409
         

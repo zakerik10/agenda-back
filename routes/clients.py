@@ -11,7 +11,6 @@ clients = Blueprint("clients", __name__)
 @jwt_required()
 def register(id_business):
     try:
-        print(f"id_business: {id_business}")
         owner_id_from_token = int(get_jwt_identity())
         business_to_check = Businesses.query.filter_by(id_business=id_business).first()
         if not business_to_check or business_to_check.id_owner != owner_id_from_token:
@@ -28,7 +27,6 @@ def register(id_business):
     except IntegrityError as e:
         db.session.rollback() 
         error_detail = str(e).splitlines()[0] # Solo me que quedo con la primer linea de error_detail donde puede aclarar qué columna es la que esta repetida (usuario, mail)
-        print(error_detail)
         
         if 'mail' in error_detail:
             return jsonify({"message": "El correo electrónico ya está registrado."}), 409

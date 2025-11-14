@@ -12,4 +12,4 @@ class Businesses(db.Model):
     phone: Mapped[str] = mapped_column(String(20), nullable=True)
     
     def __repr__(self):
-        return f"<Business id = {self.id}, nombre = {self.name}, direccion = {self.address}, mail = {self.mail}, telefono = {self.phone}"
+        return f"<Business id = {self.id_business}, nombre = {self.name}, direccion = {self.address}, mail = {self.mail}, telefono = {self.phone}"

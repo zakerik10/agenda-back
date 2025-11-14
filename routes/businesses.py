@@ -26,9 +26,6 @@ def register():
     except IntegrityError as e:
         db.session.rollback() 
         error_detail = str(e).splitlines()[0] # Solo me que quedo con la primer linea de error_detail donde puede aclarar qué columna es la que esta repetida (usuario, mail)
-        print("----------------------------")
-        print(str(e))
-        print("----------------------------")
         
         if 'mail' in error_detail:
             return jsonify({"message": "El correo electrónico ya está registrado."}), 409
@@ -41,10 +38,8 @@ def register():
         
     except ValidationError as err:
         db.session.rollback()
-        print(f"ACA FALLA BLDO {str(err)}")
         return jsonify({"message": "Error de validación", "errors": err.messages}), 400
     
     except Exception as e:
         db.session.rollback()
-        print(f"Error 500: {str(e)}")
         return jsonify({"message": f"Error desconocido: {str(e)}"}), 500

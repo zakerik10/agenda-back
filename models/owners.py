@@ -20,4 +20,4 @@ class Owners(db.Model):
         return check_password_hash(self.password, password)    
     
     def __repr__(self):
-        return f"<User id = {self.id}, usuario = {self.username}"
+        return f"<Owner id = {self.id_owner}, usuario = {self.username}"
