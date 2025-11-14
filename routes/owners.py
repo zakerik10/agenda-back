@@ -5,13 +5,13 @@ from marshmallow import ValidationError
 from serializers import *
 from sqlalchemy.exc import IntegrityError
 
-users = Blueprint("books", __name__)
+owners = Blueprint("owners", __name__)
 
 # ==============================================================================
 # 3. RUTAS DE AUTENTICACIÓN (Para Dueños de Agenda)
 # ==============================================================================
 
-@users.route('/register', methods=['POST'])
+@owners.route('/register', methods=['POST'])
 def register():
     try:
         new_user_instance = user_schema.load(request.get_json())
@@ -21,7 +21,7 @@ def register():
         mail = new_user_instance.mail
         phone = new_user_instance.phone
         
-        new_user = Users(username=username, mail=mail, phone=phone)
+        new_user = Owners(username=username, mail=mail, phone=phone)
         new_user.set_password(password)
         
         db.session.add(new_user)
@@ -51,14 +51,14 @@ def register():
         return jsonify({"message": f"Error desconocido: {str(e)}"}), 500
 
 
-@users.route('/login', methods=['POST'])
+@owners.route('/login', methods=['POST'])
 def login():
     """Ruta para autenticar y obtener el token JWT."""
     data = request.get_json()
     username = data.get('username')
     password = data.get('password')
 
-    user = Users.query.filter_by(username=username).first()
+    user = Owners.query.filter_by(username=username).first()
     
     # Verificar usuario y contraseña
     if user and user.check_password(password):
@@ -73,14 +73,14 @@ def login():
 # 4. RUTAS PROTEGIDAS (Solo para Dueños de Agenda)
 # ==============================================================================
 
-@users.route('/agenda_protegida', methods=['GET'])
+@owners.route('/agenda_protegida', methods=['GET'])
 @jwt_required() # Esta línea protege la ruta. Requiere un token JWT válido.
 def agenda_admin_panel():
     """Panel de administración de la agenda. Solo accesible por Dueños de Agenda."""
     
     # Obtener la identidad del token (el user.id que usamos al crear el token)
     user_id = get_jwt_identity()
-    user = Users.query.get(user_id)
+    user = Owners.query.get(user_id)
     
     return jsonify({
         "message": f"Bienvenido, Dueño de Agenda: {user.username}",
@@ -93,7 +93,7 @@ def agenda_admin_panel():
 # 5. RUTA PÚBLICA (Para Clientes/Invitados)
 # ==============================================================================
 
-@users.route('/agendar_turno', methods=['POST'])
+@owners.route('/agendar_turno', methods=['POST'])
 def agendar_turno_publico():
     """Ruta pública para que los clientes agenden un turno."""
     

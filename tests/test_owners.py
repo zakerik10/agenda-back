@@ -2,10 +2,10 @@ import unittest
 import json
 from app import create_app
 from utils.db import db
-from models.users import Users
+from models.owners import Owners
 
 
-class UsersAuthTestCase(unittest.TestCase):
+class OwnersAuthTestCase(unittest.TestCase):
     """
     Pruebas unitarias para las rutas de autenticación y usuarios (/register, /login, /agenda_protegida).
     """
@@ -30,7 +30,7 @@ class UsersAuthTestCase(unittest.TestCase):
             db.create_all()
             
             # 4. Crear usuario de prueba para login y rutas protegidas
-            user = Users(username='testuser', mail='test@example.com', phone='12345678')
+            user = Owners(username='testuser', mail='test@example.com', phone='12345678')
             user.set_password('testpass123')
             db.session.add(user)
             db.session.commit()
@@ -38,7 +38,7 @@ class UsersAuthTestCase(unittest.TestCase):
             self.test_user_id = user.id
             
         # 5. Configurar el url base
-        self.base_url = '/users'
+        self.base_url = '/owners'
 
     def tearDown(self):
         """Limpieza después de cada prueba: elimina la DB en memoria."""
@@ -68,7 +68,7 @@ class UsersAuthTestCase(unittest.TestCase):
         
         # Verificación de la base de datos
         with self.app.app_context():
-            user = db.session.get(Users, 2) # El primer usuario creado es ID 1 (testuser), el nuevo es ID 2
+            user = db.session.get(Owners, 2) # El primer usuario creado es ID 1 (testuser), el nuevo es ID 2
             self.assertIsNotNone(user)
             self.assertTrue(user.check_password('securepassword'))
 

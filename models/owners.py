@@ -3,8 +3,8 @@ from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy import String
 from werkzeug.security import generate_password_hash, check_password_hash
 
-class Users(db.Model):
-    __tablename__ = 'users'
+class Owners(db.Model):
+    __tablename__ = 'Owners'
     id: Mapped[int] = mapped_column(primary_key=True)
     username: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
     mail: Mapped[str] = mapped_column(String(320), unique=True, nullable=False)

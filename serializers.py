@@ -1,6 +1,6 @@
 from utils.serializers import ma
 from flask_marshmallow import Marshmallow
-from models.users import Users
+from models.owners import Owners
 from models.businesses import Businesses
 from models.clients import Clients
 # from models.books import Books
@@ -18,13 +18,13 @@ from utils.db import db
 # book_schema = BookSchema()
 # books_schema = BookSchema(many=True)
 
-class UserSchema(ma.SQLAlchemyAutoSchema):
+class OwnerSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
-        model = Users
+        model = Owners
         load_instance = True
         sqla_session = db.session
         
-user_schema = UserSchema()
+user_schema = OwnerSchema()
 
 class ClientSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
