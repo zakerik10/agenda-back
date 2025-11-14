@@ -2,8 +2,10 @@ import unittest
 import json
 from app import create_app
 from utils.db import db
+from models.owners import Owners
+from models.businesses import Businesses
 from models.clients import Clients
-
+from flask_jwt_extended import create_access_token
 
 class ClientsTestCase(unittest.TestCase):
     """
@@ -29,12 +31,28 @@ class ClientsTestCase(unittest.TestCase):
         with self.app.app_context():
             db.create_all()
             
+            owner = Owners(username='testowner', mail='test@example.com', phone='12345678')
+            owner.set_password('testpass123')
+            db.session.add(owner)
+            db.session.commit()
+            
+            business = Businesses(id_owner='1', name='testname', address="testaddress 123", mail='test@example.com', phone='12345678')
+            db.session.add(business)
+            db.session.commit()
+            
+            raw_token = create_access_token(identity=str(owner.id_owner))
+            self.access_token = f'Bearer {raw_token}'
+            
             # 4. Crear usuario de prueba para login y rutas protegidas
-            client = Clients(name='testname', surename="testsurename", mail='test@example.com', phone='12345678')
+            client = Clients(id_business='1', name='testname', surename="testsurename", mail='test@example.com', phone='12345678')
             db.session.add(client)
             db.session.commit()
             
             self.test_client_id = client.id_client
+            self.headers = {
+                'Content-Type': 'application/json',
+                'Authorization': self.access_token # Ya debe tener "Bearer " prefijado
+            }
             
         # 5. Configurar el url base
         self.base_url = '/clients'
@@ -52,14 +70,15 @@ class ClientsTestCase(unittest.TestCase):
     def test_registration_success(self):
         """Prueba que el registro de un nuevo usuario es exitoso (201)."""
         response = self.client.post(
-            self.base_url + '/register',
+            self.base_url + '/register/1',
             data=json.dumps({
                 "name": "newname",
                 "surename": "newsurename",
                 "mail": "new@email.com",
                 "phone": "98765432"
             }),
-            content_type='application/json'
+            content_type='application/json',
+            headers=self.headers
         )
         self.assertEqual(response.status_code, 201)
         data = response.get_json()
@@ -73,14 +92,15 @@ class ClientsTestCase(unittest.TestCase):
     def test_registration_duplicate_mail(self):
         """Prueba que el registro falla con un mail duplicado (409)."""
         response = self.client.post(
-            self.base_url + '/register',
+            self.base_url + '/register/1',
             data=json.dumps({
                 "name": "newUser", 
                 "surename": "newsurename",
                 "mail": "test@example.com", # Ya existe de setUp()
                 "phone": "12345678"
             }),
-            content_type='application/json'
+            content_type='application/json',
+            headers=self.headers
         )
         self.assertEqual(response.status_code, 409)
         data = response.get_json()
@@ -90,13 +110,14 @@ class ClientsTestCase(unittest.TestCase):
     def test_registration_missing_name(self):
         """Prueba que el registro falla si falta el nombre de usuario (400 - ValidationError)."""
         response = self.client.post(
-            self.base_url + '/register',
+            self.base_url + '/register/1',
             data=json.dumps({
                 "surename": "surenameclient",
                 "mail": "missing@email.com"
                 # Falta name
             }),
-            content_type='application/json'
+            content_type='application/json',
+            headers=self.headers
         )
         self.assertEqual(response.status_code, 400)
         data = response.get_json()
@@ -106,13 +127,14 @@ class ClientsTestCase(unittest.TestCase):
     def test_registration_missing_surename(self):
         """Prueba que el registro falla si falta el nombre de usuario (400 - ValidationError)."""
         response = self.client.post(
-            self.base_url + '/register',
+            self.base_url + '/register/1',
             data=json.dumps({
                 "name": "nameclient",
                 "mail": "missing@email.com"
                 # Falta surename
             }),
-            content_type='application/json'
+            content_type='application/json',
+            headers=self.headers
         )
         self.assertEqual(response.status_code, 400)
         data = response.get_json()
@@ -122,13 +144,14 @@ class ClientsTestCase(unittest.TestCase):
     def test_registration_missing_mail(self):
         """Prueba que el registro falla si falta el nombre de usuario (400 - ValidationError)."""
         response = self.client.post(
-            self.base_url + '/register',
+            self.base_url + '/register/1',
             data=json.dumps({
                 "name": "newname",
                 "surename": "newsurename"
                 # Falta mail
             }),
-            content_type='application/json'
+            content_type='application/json',
+            headers=self.headers
         )
         self.assertEqual(response.status_code, 400)
         data = response.get_json()

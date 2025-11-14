@@ -57,7 +57,6 @@ def login():
     data = request.get_json()
     username = data.get('username')
     password = data.get('password')
-
     owner = Owners.query.filter_by(username=username).first()
     
     # Verificar usuario y contraseña

@@ -1,27 +1,29 @@
 from utils.db import db
 from flask import request, jsonify, Blueprint
+from flask_jwt_extended import jwt_required, get_jwt_identity
 from marshmallow import ValidationError
 from serializers import *
 from sqlalchemy.exc import IntegrityError
 
 clients = Blueprint("clients", __name__)
 
-@clients.route('/register', methods=['POST'])
-def register():
+@clients.route('/register/<id_business>', methods=['POST'])
+@jwt_required()
+def register(id_business):
     try:
-        new_client_instance = client_schema.load(request.get_json())
+        print(f"id_business: {id_business}")
+        owner_id_from_token = int(get_jwt_identity())
+        business_to_check = Businesses.query.filter_by(id_business=id_business).first()
+        if not business_to_check or business_to_check.id_owner != owner_id_from_token:
+            return jsonify({"msg": "Acceso denegado o negocio no encontrado"}), 403 # Forbidden
         
-        name = new_client_instance.name
-        surename = new_client_instance.surename
-        mail = new_client_instance.mail
-        phone = new_client_instance.phone
+        new_client = client_schema.load(request.get_json())
+        new_client.id_business = id_business
         
-        new_user = Clients(name=name, surename=surename, mail=mail, phone=phone)
-        
-        db.session.add(new_user)
+        db.session.add(new_client)
         db.session.commit()
 
-        return jsonify({"message": f"Cliente {name} {surename} registrado exitosamente."}), 201
+        return jsonify({"message": f"Cliente {new_client.name} {new_client.surename} registrado exitosamente."}), 201
     
     except IntegrityError as e:
         db.session.rollback() 
