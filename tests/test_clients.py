@@ -5,9 +5,9 @@ from utils.db import db
 from models.clients import Clients
 
 
-class UsersAuthTestCase(unittest.TestCase):
+class ClientsTestCase(unittest.TestCase):
     """
-    Pruebas unitarias para las rutas de autenticación y usuarios (/register, /login, /agenda_protegida).
+    Pruebas unitarias para las rutas de Clientes.
     """
 
     def setUp(self):
@@ -34,7 +34,7 @@ class UsersAuthTestCase(unittest.TestCase):
             db.session.add(client)
             db.session.commit()
             
-            self.test_client_id = client.id
+            self.test_client_id = client.id_client
             
         # 5. Configurar el url base
         self.base_url = '/clients'
@@ -67,8 +67,8 @@ class UsersAuthTestCase(unittest.TestCase):
         
         # Verificación de la base de datos
         with self.app.app_context():
-            user = db.session.get(Clients, 2) # El primer usuario creado es ID 1 (testuser), el nuevo es ID 2
-            self.assertIsNotNone(user)
+            client = db.session.get(Clients, 2) # El primer usuario creado es ID 1 (testuser), el nuevo es ID 2
+            self.assertIsNotNone(client)
         
     def test_registration_duplicate_mail(self):
         """Prueba que el registro falla con un mail duplicado (409)."""

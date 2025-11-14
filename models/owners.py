@@ -5,7 +5,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 
 class Owners(db.Model):
     __tablename__ = 'Owners'
-    id: Mapped[int] = mapped_column(primary_key=True)
+    id_owner: Mapped[int] = mapped_column(primary_key=True)
     username: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
     mail: Mapped[str] = mapped_column(String(320), unique=True, nullable=False)
     password: Mapped[str] = mapped_column(String(255), nullable=False)

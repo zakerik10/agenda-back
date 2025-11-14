@@ -30,12 +30,12 @@ class OwnersAuthTestCase(unittest.TestCase):
             db.create_all()
             
             # 4. Crear usuario de prueba para login y rutas protegidas
-            user = Owners(username='testuser', mail='test@example.com', phone='12345678')
-            user.set_password('testpass123')
-            db.session.add(user)
+            owner = Owners(username='testuser', mail='test@example.com', phone='12345678')
+            owner.set_password('testpass123')
+            db.session.add(owner)
             db.session.commit()
             
-            self.test_user_id = user.id
+            self.test_owner_id = owner.id_owner
             
         # 5. Configurar el url base
         self.base_url = '/owners'
@@ -68,9 +68,9 @@ class OwnersAuthTestCase(unittest.TestCase):
         
         # Verificación de la base de datos
         with self.app.app_context():
-            user = db.session.get(Owners, 2) # El primer usuario creado es ID 1 (testuser), el nuevo es ID 2
-            self.assertIsNotNone(user)
-            self.assertTrue(user.check_password('securepassword'))
+            owner = db.session.get(Owners, 2) # El primer usuario creado es ID 1 (testuser), el nuevo es ID 2
+            self.assertIsNotNone(owner)
+            self.assertTrue(owner.check_password('securepassword'))
 
     def test_registration_duplicate_username(self):
         """Prueba que el registro falla con un nombre de usuario duplicado (409)."""

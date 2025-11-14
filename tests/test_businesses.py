@@ -5,9 +5,9 @@ from utils.db import db
 from models.businesses import Businesses
 
 
-class UsersAuthTestCase(unittest.TestCase):
+class BusinessAuthTestCase(unittest.TestCase):
     """
-    Pruebas unitarias para las rutas de autenticación y usuarios (/register, /login, /agenda_protegida).
+    Pruebas unitarias para las rutas Business.
     """
 
     def setUp(self):
@@ -34,7 +34,7 @@ class UsersAuthTestCase(unittest.TestCase):
             db.session.add(business)
             db.session.commit()
             
-            self.test_client_id = business.id
+            self.test_business_id = business.id_business
             
         # 5. Configurar el url base
         self.base_url = '/businesses'

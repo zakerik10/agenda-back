@@ -58,12 +58,12 @@ def login():
     username = data.get('username')
     password = data.get('password')
 
-    user = Owners.query.filter_by(username=username).first()
+    owner = Owners.query.filter_by(username=username).first()
     
     # Verificar usuario y contraseña
-    if user and user.check_password(password):
+    if owner and owner.check_password(password):
         # Crear un token de acceso JWT usando el ID del usuario como identidad
-        access_token = create_access_token(identity=str(user.id))
+        access_token = create_access_token(identity=str(owner.id_owner))
         return jsonify(access_token=access_token), 200
     
     return jsonify({"message": "Usuario o contraseña inválidos"}), 401

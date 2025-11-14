@@ -4,7 +4,7 @@ from sqlalchemy import String
 
 class Clients(db.Model):
     __tablename__ = 'clients'
-    id: Mapped[int] = mapped_column(primary_key=True)
+    id_client: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(50), nullable=False)
     surename: Mapped[str] = mapped_column(String(50), nullable=False)
     mail: Mapped[str] = mapped_column(String(320), unique=True, nullable=False)
