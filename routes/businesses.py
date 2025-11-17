@@ -30,8 +30,8 @@ def register():
         if 'mail' in error_detail:
             return jsonify({"message": "El correo electrónico ya está registrado."}), 409
         
-        elif 'address' in error_detail:
-            return jsonify({"message": "La dirección ya está registrada."}), 409
+        # elif 'address' in error_detail:
+        #     return jsonify({"message": "La dirección ya está registrada."}), 409
         
         else:
             return jsonify({"message": "Error de integridad desconocido."}), 500

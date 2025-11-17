@@ -102,7 +102,6 @@ class BusinessAuthTestCase(unittest.TestCase):
         data = response.get_json()
         self.assertIn("correo electrónico", data['message'])
 
-        
     def test_registration_missing_name(self):
         """Prueba que el registro falla si falta el nombre de negocio (400 - ValidationError)."""
         response = self.business.post(
@@ -157,6 +156,37 @@ class BusinessAuthTestCase(unittest.TestCase):
         self.assertIn("Error de validación", data['message'])
         self.assertIn("mail", data['errors'])
         
+    def test_registration_missing_token(self):
+        """Prueba que no se puede registrar nuevos negocios sin el token de autorización"""
+        response = self.business.post(
+            self.base_url + '/register',
+            data=json.dumps({
+                "name": "newname",
+                "address": "newaddress 123",
+                "mail": "new@email.com",
+                "phone": "98765432"
+            }),
+            content_type='application/json'
+        )
+        self.assertEqual(response.status_code, 401)
+    
+    def test_registration_invalid_token(self):
+        """Prueba que no se puede registrar nuevos negocios con el token de autorización inválido"""
+        response = self.business.post(
+            self.base_url + '/register',
+            data=json.dumps({
+                "name": "newname",
+                "address": "newaddress 123",
+                "mail": "new@email.com",
+                "phone": "98765432"
+            }),
+            content_type='application/json',
+            headers = {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer FAKE_INVALID_TOKEN'
+            }
+        )
+        self.assertEqual(response.status_code, 422)
     
 if __name__ == '__main__':
     # Ejecuta el conjunto de pruebas

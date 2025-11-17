@@ -7,7 +7,7 @@ from models.businesses import Businesses
 from models.clients import Clients
 from flask_jwt_extended import create_access_token
 
-class ClientsTestCase(unittest.TestCase):
+class ClientsRegistrationTestCase(unittest.TestCase):
     """
     Pruebas unitarias para las rutas de Clientes.
     """
@@ -37,6 +37,15 @@ class ClientsTestCase(unittest.TestCase):
             db.session.commit()
             
             business = Businesses(id_owner='1', name='testname', address="testaddress 123", mail='test@example.com', phone='12345678')
+            db.session.add(business)
+            db.session.commit()
+            
+            owner2 = Owners(username='testowner2', mail='test2@example.com', phone='22345678')
+            owner.set_password('testpass123')
+            db.session.add(owner)
+            db.session.commit()
+            
+            business2 = Businesses(id_owner='2', name='testname2', address="testaddress 1233", mail='test2@example.com', phone='22345678')
             db.session.add(business)
             db.session.commit()
             
@@ -106,7 +115,6 @@ class ClientsTestCase(unittest.TestCase):
         data = response.get_json()
         self.assertIn("correo electrónico", data['message'])
 
-        
     def test_registration_missing_name(self):
         """Prueba que el registro falla si falta el nombre de usuario (400 - ValidationError)."""
         response = self.client.post(
@@ -158,6 +166,53 @@ class ClientsTestCase(unittest.TestCase):
         self.assertIn("Error de validación", data['message'])
         self.assertIn("mail", data['errors'])
         
+    def test_registration_missing_token(self):
+        """Prueba que no se puede registrar nuevos clientes sin el token de autorización"""
+        response = self.client.post(
+            self.base_url + '/register/1',
+            data=json.dumps({
+                "name": "newname",
+                "surename": "newsurename",
+                "mail": "new@email.com",
+                "phone": "98765432"
+            }),
+            content_type='application/json'
+        )
+        self.assertEqual(response.status_code, 401)
+    
+    def test_registration_invalid_token(self):
+        """Prueba que no se puede registrar nuevos clientes con el token de autorización inválido"""
+        response = self.client.post(
+            self.base_url + '/register/1',
+            data=json.dumps({
+                "name": "newname",
+                "surename": "newsurename",
+                "mail": "new@email.com",
+                "phone": "98765432"
+            }),
+            content_type='application/json',
+            headers = {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer FAKE_INVALID_TOKEN'
+            }
+        )
+        self.assertEqual(response.status_code, 422)
+        
+    def test_registration_other_bussiness(self):
+        """Prueba que el registro falla si intento crear un cliente a un negocio que no me pertenece (403)."""
+        response = self.client.post(
+            self.base_url + '/register/2',
+            data=json.dumps({
+                "name": "newname",
+                "surename": "newsurename",
+                "mail": "new@email.com",
+                "phone": "98765432"
+            }),
+            content_type='application/json',
+            headers=self.headers
+        )
+        self.assertEqual(response.status_code, 403)
+        data = response.get_json()
     
 if __name__ == '__main__':
     # Ejecuta el conjunto de pruebas

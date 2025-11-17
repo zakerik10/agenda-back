@@ -7,7 +7,7 @@ class Businesses(db.Model):
     id_business: Mapped[int] = mapped_column(primary_key=True)
     id_owner: Mapped[int] = mapped_column(ForeignKey('owners.id_owner'), nullable=False)
     name: Mapped[str] = mapped_column(String(100), nullable=False)
-    address: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
+    address: Mapped[str] = mapped_column(String(255), nullable=False)
     mail: Mapped[str] = mapped_column(String(320), unique=True, nullable=False)
     phone: Mapped[str] = mapped_column(String(20), nullable=True)
     

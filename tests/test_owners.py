@@ -156,31 +156,26 @@ class OwnersAuthTestCase(unittest.TestCase):
     # PRUEBAS DE INICIO DE SESIÓN (/login)
     # ==========================================================================
 
-    def get_auth_token(self, username="testuser", password="testpass123"):
+    def get_auth_token(self, username, password):
         """Helper para obtener un token de acceso válido."""
         response = self.client.post(
             self.base_url + '/login',
             data=json.dumps({"username": username, "password": password}),
             content_type='application/json'
         )
-        return response.get_json().get("access_token")
+        return response
 
     def test_login_success(self):
         """Prueba que el inicio de sesión es exitoso y devuelve un token (200)."""
-        token = self.get_auth_token()
+        response_auth_token = self.get_auth_token("testuser", "testpass123")
+        token = response_auth_token.get_json().get("access_token")
         self.assertIsInstance(token, str)
+        self.assertEqual(response_auth_token.status_code, 200)
 
     def test_login_wrong_password(self):
         """Prueba que el inicio de sesión falla con contraseña incorrecta (401)."""
-        response = self.client.post(
-            self.base_url + '/login',
-            data=json.dumps({
-                "username": "testuser",
-                "password": "wrongpassword"
-            }),
-            content_type='application/json'
-        )
-        self.assertEqual(response.status_code, 401)
+        response_auth_token = self.get_auth_token("testuser", "wrongpassword")
+        self.assertEqual(response_auth_token.status_code, 401)
         
     # ==========================================================================
     # PRUEBAS DE RUTA PROTEGIDA (/agenda_protegida)
@@ -188,7 +183,8 @@ class OwnersAuthTestCase(unittest.TestCase):
 
     def test_protected_route_success(self):
         """Prueba que la ruta protegida es accesible con un token válido (200)."""
-        token = self.get_auth_token()
+        response_auth_token = self.get_auth_token("testuser", "testpass123")
+        token = response_auth_token.get_json().get("access_token")
         response = self.client.get(
             self.base_url + '/agenda_protegida',
             headers={'Authorization': f'{token}'}
