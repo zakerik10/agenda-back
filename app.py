@@ -6,6 +6,7 @@ from flask_marshmallow import Marshmallow
 from routes.owners import owners
 from routes.clients import clients
 from routes.businesses import businesses
+from routes.employees import employees
 from utils.db import db
 
 jwt = JWTManager()
@@ -46,8 +47,6 @@ def create_app(test_config=None):
     app.register_blueprint(owners, url_prefix='/owners')
     app.register_blueprint(clients, url_prefix='/clients')
     app.register_blueprint(businesses, url_prefix='/businesses')
-    # app.register_blueprint(books)
-    # app.register_blueprint(roles)
-    # app.register_blueprint(permits)
+    app.register_blueprint(employees, url_prefix='/employees')
 
     return app # Retorna la aplicación configurada

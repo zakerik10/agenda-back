@@ -3,20 +3,10 @@ from flask_marshmallow import Marshmallow
 from models.owners import Owners
 from models.businesses import Businesses
 from models.clients import Clients
-# from models.books import Books
+from models.employees import Employees
 from utils.db import db
 
 # ma = Marshmallow(app)
-
-# class BookSchema(ma.SQLAlchemyAutoSchema):
-#     class Meta:
-#         model = Books
-#         fields = ("id", "titulo", "autor", "isbn", "stock")
-#         load_instance = True
-#         sqla_session = db.session
-
-# book_schema = BookSchema()
-# books_schema = BookSchema(many=True)
 
 class OwnerSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
@@ -43,3 +33,12 @@ class BusinessSchema(ma.SQLAlchemyAutoSchema):
         
 business_schema = BusinessSchema()
 businesses_schema = BusinessSchema(many=True)
+
+class EmployeeSchema(ma.SQLAlchemyAutoSchema):
+    class Meta:
+        model = Employees
+        load_instance = True
+        sqla_session = db.session
+        
+employee_schema = EmployeeSchema()
+employees_schema = EmployeeSchema(many=True)
