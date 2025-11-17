@@ -140,6 +140,30 @@ class ServicesOfferedRegistrationTestCase(unittest.TestCase):
             }
         )
         self.assertEqual(response.status_code, 422)
+        
+    def test_registration_duplicate_assignment(self): # Nuevo test
+        response = self.client.post(
+            self.base_url + '/register',
+            data=json.dumps({
+                "id_service": '1',
+                "id_employee": '1'
+            }),
+            content_type='application/json',
+            headers=self.headers
+        )
+
+        response_duplicate = self.client.post(
+            self.base_url + '/register', 
+            data=json.dumps({
+                "id_service": "1",
+                "id_employee": "1"
+            }), 
+            content_type='application/json', 
+            headers=self.headers
+        )
+        
+        self.assertEqual(response_duplicate.status_code, 409)
+        self.assertIn("ya existe", response_duplicate.get_json()['message']) 
     
 if __name__ == '__main__':
     # Ejecuta el conjunto de pruebas

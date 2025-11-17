@@ -21,18 +21,34 @@ def register():
         id_service = new_service_offered.id_service
         id_employee = new_service_offered.id_employee
         
-        service_to_offer_query = Services.query.filter_by(id_service = int(id_service))
-        service_to_offer = service_to_offer_query.first()
+        existing_assignment = ServicesOffered.query.filter_by(
+            id_service=id_service,
+            id_employee=id_employee
+        ).first()
+
+        if existing_assignment:
+            return jsonify({"message": "La asignación de este servicio a este empleado ya existe."}), 409
         
-        if not service_to_offer or service_to_offer.id_owner != owner_id_from_token:
+        service_to_offer = Services.query.filter_by(
+            id_service = int(id_service),
+            id_owner = owner_id_from_token
+        ).first()
+        
+        if not service_to_offer:
             return jsonify({"message": f"Acceso denegado o servicio no encontrado"}), 403
         
-        employee_query = Employees.query.filter_by(id_employee = id_employee)
-        employee = employee_query.first()
+        employee = Employees.query.filter_by(id_employee = id_employee).first()
+        if not employee:
+            return jsonify({"message": f"Empleado con ID {id_employee} no encontrado."}), 404
+        
         id_business = employee.id_business
         
-        business_to_check = Businesses.query.filter_by(id_business=id_business).first()
-        if not business_to_check or business_to_check.id_owner != owner_id_from_token:
+        business_to_check = Businesses.query.filter_by(
+            id_business=id_business,
+            id_owner=owner_id_from_token
+        ).first()
+        
+        if not business_to_check:
             return jsonify({"msg": "Acceso denegado o negocio no encontrado"}), 403 # Forbidden
         
         db.session.add(new_service_offered)
@@ -44,13 +60,6 @@ def register():
         db.session.rollback() 
         error_detail = str(e).splitlines()[0] # Solo me que quedo con la primer linea de error_detail donde puede aclarar qué columna es la que esta repetida (usuario, mail)
         
-        # if 'mail' in error_detail:
-        #     return jsonify({"message": "El correo electrónico ya está registrado."}), 409
-        
-        # # elif 'address' in error_detail:
-        # #     return jsonify({"message": "La dirección ya está registrada."}), 409
-        
-        # else:
         print(f"error_detail: {error_detail}")
         return jsonify({f"message": "Error de integridad desconocido: {error_detail}"}), 500
         
