@@ -4,6 +4,7 @@ from models.owners import Owners
 from models.businesses import Businesses
 from models.clients import Clients
 from models.employees import Employees
+from models.services import Services
 from utils.db import db
 
 # ma = Marshmallow(app)
@@ -42,3 +43,12 @@ class EmployeeSchema(ma.SQLAlchemyAutoSchema):
         
 employee_schema = EmployeeSchema()
 employees_schema = EmployeeSchema(many=True)
+
+class ServiceSchema(ma.SQLAlchemyAutoSchema):
+    class Meta:
+        model = Services
+        load_instance = True
+        sqla_session = db.session
+        
+service_schema = ServiceSchema()
+services_schema = ServiceSchema(many=True)
