@@ -64,7 +64,7 @@ class ServicesOfferedRegistrationTestCase(unittest.TestCase):
             db.session.commit()
             
             employee2 = Employees(id_business='2', name='testname2', surename="testsurename2", mail='test2@example.com', phone='22345678')
-            db.session.add(employee)
+            db.session.add(employee2)
             db.session.commit()
             
             raw_token = create_access_token(identity=str(owner.id_owner))
@@ -141,7 +141,7 @@ class ServicesOfferedRegistrationTestCase(unittest.TestCase):
         )
         self.assertEqual(response.status_code, 422)
         
-    def test_registration_duplicate_assignment(self): # Nuevo test
+    def test_registration_duplicate_assignment(self):
         response = self.client.post(
             self.base_url + '/register',
             data=json.dumps({
@@ -164,6 +164,33 @@ class ServicesOfferedRegistrationTestCase(unittest.TestCase):
         
         self.assertEqual(response_duplicate.status_code, 409)
         self.assertIn("ya existe", response_duplicate.get_json()['message']) 
+    
+    def test_registration_other_service(self):
+        response = self.client.post(
+            self.base_url + '/register',
+            data=json.dumps({
+                "id_service": '2',
+                "id_employee": '1'
+            }),
+            content_type='application/json',
+            headers=self.headers
+        )
+        self.assertEqual(response.status_code, 403)
+        self.assertIn("denegado", response.get_json()['message'])
+        
+    def test_registration_other_employee(self):
+        response = self.client.post(
+            self.base_url + '/register',
+            data=json.dumps({
+                "id_service": '1',
+                "id_employee": '2'
+            }),
+            content_type='application/json',
+            headers=self.headers
+        )
+        self.assertEqual(response.status_code, 403)
+        self.assertIn("denegado", response.get_json()['message']) 
+        
     
 if __name__ == '__main__':
     # Ejecuta el conjunto de pruebas

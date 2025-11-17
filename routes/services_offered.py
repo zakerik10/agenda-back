@@ -49,7 +49,7 @@ def register():
         ).first()
         
         if not business_to_check:
-            return jsonify({"msg": "Acceso denegado o negocio no encontrado"}), 403 # Forbidden
+            return jsonify({"message": "Acceso denegado o negocio no encontrado"}), 403 # Forbidden
         
         db.session.add(new_service_offered)
         db.session.commit()
@@ -63,10 +63,10 @@ def register():
         print(f"error_detail: {error_detail}")
         return jsonify({f"message": "Error de integridad desconocido: {error_detail}"}), 500
         
-    except ValidationError as err:
+    except ValidationError as e:
         db.session.rollback()
-        print(f"ValidationError: {err}")
-        return jsonify({"message": "Error de validación", "errors": err.messages}), 400
+        print(f"ValidationError: {e}")
+        return jsonify({"message": "Error de validación", "errors": e.messages}), 400
     
     except Exception as e:
         print(f"Exception: {e}")
