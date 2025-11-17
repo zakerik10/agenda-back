@@ -8,6 +8,7 @@ from routes.clients import clients
 from routes.businesses import businesses
 from routes.employees import employees
 from routes.services import services
+from routes.services_offered import services_offered
 from utils.db import db
 
 jwt = JWTManager()
@@ -50,5 +51,6 @@ def create_app(test_config=None):
     app.register_blueprint(businesses, url_prefix='/businesses')
     app.register_blueprint(employees, url_prefix='/employees')
     app.register_blueprint(services, url_prefix='/services')
+    app.register_blueprint(services_offered, url_prefix='/services_offered')
 
     return app # Retorna la aplicación configurada

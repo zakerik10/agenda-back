@@ -1,10 +1,12 @@
 from utils.serializers import ma
 from flask_marshmallow import Marshmallow
+from marshmallow import fields
 from models.owners import Owners
 from models.businesses import Businesses
 from models.clients import Clients
 from models.employees import Employees
 from models.services import Services
+from models.services_offered import ServicesOffered
 from utils.db import db
 
 # ma = Marshmallow(app)
@@ -52,3 +54,15 @@ class ServiceSchema(ma.SQLAlchemyAutoSchema):
         
 service_schema = ServiceSchema()
 services_schema = ServiceSchema(many=True)
+
+class ServicesOfferedSchema(ma.SQLAlchemyAutoSchema):
+    id_service = fields.Int(required=True)
+    id_employee = fields.Int(required=True)
+    
+    class Meta:
+        model = ServicesOffered
+        load_instance = True
+        sqla_session = db.session
+        
+service_offered_schema = ServicesOfferedSchema()
+services_offered_schema = ServicesOfferedSchema(many=True)
