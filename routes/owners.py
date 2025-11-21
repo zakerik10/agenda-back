@@ -4,6 +4,9 @@ from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identi
 from marshmallow import ValidationError
 from serializers import *
 from sqlalchemy.exc import IntegrityError
+from firebase_admin import auth, exceptions
+from flask_jwt_extended import create_access_token
+from flask_cors import cross_origin
 
 owners = Blueprint("owners", __name__)
 
@@ -11,29 +14,30 @@ owners = Blueprint("owners", __name__)
 # 3. RUTAS DE AUTENTICACIÓN (Para Dueños de Agenda)
 # ==============================================================================
 
+"""
 @owners.route('/register', methods=['POST'])
 def register():
     try:
-        new_user_instance = user_schema.load(request.get_json())
+        new_user_instance = owner_schema.load(request.get_json())
         
-        username = new_user_instance.username
+        name = new_user_instance.name
         password = new_user_instance.password
         mail = new_user_instance.mail
         phone = new_user_instance.phone
         
-        new_user = Owners(username=username, mail=mail, phone=phone)
+        new_user = Owners(name=name, mail=mail, phone=phone)
         new_user.set_password(password)
         
         db.session.add(new_user)
         db.session.commit()
 
-        return jsonify({"message": f"Usuario {username} registrado exitosamente. Ahora puede iniciar sesión."}), 201
+        return jsonify({"message": f"Usuario {name} registrado exitosamente. Ahora puede iniciar sesión."}), 201
     
     except IntegrityError as e:
         db.session.rollback() 
         error_detail = str(e).splitlines()[0] # Solo me que quedo con la primer linea de error_detail donde puede aclarar qué columna es la que esta repetida (usuario, mail)
         
-        if 'username' in error_detail:
+        if 'name' in error_detail:
             return jsonify({"message": "El nombre de usuario ya está en uso."}), 409
         
         elif 'mail' in error_detail:
@@ -53,11 +57,11 @@ def register():
 
 @owners.route('/login', methods=['POST'])
 def login():
-    """Ruta para autenticar y obtener el token JWT."""
+    # Ruta para autenticar y obtener el token JWT.
     data = request.get_json()
-    username = data.get('username')
+    name = data.get('name')
     password = data.get('password')
-    owner = Owners.query.filter_by(username=username).first()
+    owner = Owners.query.filter_by(name=name).first()
     
     # Verificar usuario y contraseña
     if owner and owner.check_password(password):
@@ -67,7 +71,69 @@ def login():
         return jsonify(access_token=bearer_token), 200
     
     return jsonify({"message": "Usuario o contraseña inválidos"}), 401
+"""
 
+@owners.route('/auth', methods=['POST'])
+def authentication():
+    data = request.get_json()
+    id_token = data.get('idToken')
+
+    if not id_token:
+        return jsonify({"message": "Missing idToken"}), 400
+
+    try:
+        # Verificar ID Token con Firebase Admin SDK
+        decoded_token = auth.verify_id_token(id_token) 
+        firebase_uid = decoded_token.get('uid')
+        mail = decoded_token.get('email')
+        name = decoded_token.get('name', 'Usuario') # Usa un valor por defecto si falta
+        
+    except exceptions.FirebaseError as e:
+        # Si el token es inválido, expiró, o cualquier error de Firebase
+        print(f"ERROR DE FIREBASE ADMIN: {e}")
+        return jsonify({"message": f"Firebase Token validation failed: {e.code}"}), 401
+    
+    # Decisión de Registro vs. Login
+    owner = Owners.query.filter_by(firebase_uid=firebase_uid).first()
+    print(f"owner: {owner}")
+    new_owner = None
+    if owner is None:
+        # REGISTRO: Usuario nuevo, lo creamos en la base de datos SQL.
+        try:
+            new_owner = Owners(
+                firebase_uid=firebase_uid, 
+                mail=mail, 
+                name=name
+            )
+            db.session.add(new_owner)
+            db.session.commit()
+            owner = new_owner
+            print("Nuevo usuario registrado:", owner.mail)
+            
+        except Exception as e:
+            db.session.rollback()
+            print(f"ave que pasa: {e}")
+            return jsonify({"message": f"Error registering owner: {str(e)}"}), 500
+    access_token = create_access_token(identity=owner.id_owner)
+    
+    # E. 🎁 Respuesta al Frontend
+    return jsonify({
+        "access_token": "Bearer " + access_token,
+        "message": "Login successful" if new_owner != None else "Registration successful"
+    }), 200
+    
+@owners.route('/me', methods=['POST'])
+@jwt_required()
+def get_owner_profile():
+    current_owner_id = get_jwt_identity()
+    owner = Owners.query.get(current_owner_id)
+    
+    if owner is None:
+        return jsonify({"message": "Owner not found in database"}), 404
+    
+    return owner_schema.jsonify(owner), 200
+    
+    
 
 # ==============================================================================
 # 4. RUTAS PROTEGIDAS (Solo para Dueños de Agenda)
@@ -83,7 +149,7 @@ def agenda_admin_panel():
     user = Owners.query.get(user_id)
     
     return jsonify({
-        "message": f"Bienvenido, Dueño de Agenda: {user.username}",
+        "message": f"Bienvenido, Dueño de Agenda: {user.name}",
         "acceso": "Protegido por JWT",
         "acciones_permitidas": "Crear, modificar, o eliminar citas en tu agenda."
     }), 200

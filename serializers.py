@@ -17,7 +17,7 @@ class OwnerSchema(ma.SQLAlchemyAutoSchema):
         load_instance = True
         sqla_session = db.session
         
-user_schema = OwnerSchema()
+owner_schema = OwnerSchema()
 
 class ClientSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
