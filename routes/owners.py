@@ -114,7 +114,7 @@ def authentication():
             db.session.rollback()
             print(f"ave que pasa: {e}")
             return jsonify({"message": f"Error registering owner: {str(e)}"}), 500
-    access_token = create_access_token(identity=owner.id_owner)
+    access_token = create_access_token(identity=str(owner.id_owner))
     
     # E. 🎁 Respuesta al Frontend
     return jsonify({
@@ -122,10 +122,10 @@ def authentication():
         "message": "Login successful" if new_owner != None else "Registration successful"
     }), 200
     
-@owners.route('/me', methods=['POST'])
+@owners.route('/me', methods=['GET'])
 @jwt_required()
 def get_owner_profile():
-    current_owner_id = get_jwt_identity()
+    current_owner_id = int(get_jwt_identity())
     owner = Owners.query.get(current_owner_id)
     
     if owner is None:
