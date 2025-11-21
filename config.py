@@ -1,5 +1,6 @@
 from dotenv import load_dotenv
 import os
+from datetime import timedelta
 
 class DevelopmentConfig():
     DEBUG = True
@@ -23,3 +24,9 @@ JWT_SECRET_KEY = os.environ["JWT_SECRET_KEY"]
 
 FRONT_URL = os.environ["FRONT_URL"]
 FRONT_PORT = os.environ["FRONT_PORT"]
+
+# JWT_ACCESS_TOKEN_EXPIRES = timedelta(minutes=15)
+# JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=90)
+
+JWT_ACCESS_TOKEN_EXPIRES = timedelta(minutes=15)
+JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=30)

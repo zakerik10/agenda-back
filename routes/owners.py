@@ -5,7 +5,7 @@ from marshmallow import ValidationError
 from serializers import *
 from sqlalchemy.exc import IntegrityError
 from firebase_admin import auth, exceptions
-from flask_jwt_extended import create_access_token
+from flask_jwt_extended import create_access_token, create_refresh_token
 from flask_cors import cross_origin
 
 owners = Blueprint("owners", __name__)
@@ -90,13 +90,11 @@ def authentication():
         
     except exceptions.FirebaseError as e:
         # Si el token es inválido, expiró, o cualquier error de Firebase
-        print(f"ERROR DE FIREBASE ADMIN: {e}")
         return jsonify({"message": f"Firebase Token validation failed: {e.code}"}), 401
     
     # Decisión de Registro vs. Login
     owner = Owners.query.filter_by(firebase_uid=firebase_uid).first()
-    print(f"owner: {owner}")
-    new_owner = None
+    new_owner = None 
     if owner is None:
         # REGISTRO: Usuario nuevo, lo creamos en la base de datos SQL.
         try:
@@ -108,32 +106,50 @@ def authentication():
             db.session.add(new_owner)
             db.session.commit()
             owner = new_owner
-            print("Nuevo usuario registrado:", owner.mail)
             
         except Exception as e:
             db.session.rollback()
-            print(f"ave que pasa: {e}")
             return jsonify({"message": f"Error registering owner: {str(e)}"}), 500
-    access_token = create_access_token(identity=str(owner.id_owner))
+    identity = str(owner.id_owner)
+    access_token = create_access_token(identity=identity)
+    refresh_token = create_refresh_token(identity=identity)
     
-    # E. 🎁 Respuesta al Frontend
     return jsonify({
-        "access_token": "Bearer " + access_token,
+        "access_token": access_token,
+        "refresh_token" : refresh_token,
         "message": "Login successful" if new_owner != None else "Registration successful"
     }), 200
     
 @owners.route('/me', methods=['GET'])
 @jwt_required()
 def get_owner_profile():
-    current_owner_id = int(get_jwt_identity())
-    owner = Owners.query.get(current_owner_id)
+    current_owner_id_str = get_jwt_identity() 
+    try:
+        current_owner_id = int(current_owner_id_str)
+    except ValueError:
+        return jsonify({"msg": "ID de usuario inválido en el token"}), 400
+    
+    owner = Owners.query.get(current_owner_id) 
     
     if owner is None:
         return jsonify({"message": "Owner not found in database"}), 404
-    
+        
     return owner_schema.jsonify(owner), 200
+
+@owners.route('/token/refresh', methods=['POST'])
+@jwt_required(refresh=True) # Solo acepta Refresh Tokens
+def refresh():
+    current_owner_id = get_jwt_identity()
     
+    # Crear un NUEVO Access Token (reinicia el contador de accessToken)
+    new_access_token = create_access_token(identity=current_owner_id)
+    # Crear un NUEVO Refresh Token (reinicia el contador de refreshToken)
+    new_refresh_token = create_refresh_token(identity=current_owner_id) 
     
+    return jsonify(
+        access_token=new_access_token,
+        refresh_token=new_refresh_token
+    ), 200
 
 # ==============================================================================
 # 4. RUTAS PROTEGIDAS (Solo para Dueños de Agenda)

@@ -1,7 +1,7 @@
 import datetime
 from flask import Flask
 from flask_jwt_extended import JWTManager
-from config import DATABASE_CONECTION_URI, JWT_SECRET_KEY, FRONT_PORT, FRONT_URL, GOOGLE_APPLICATION_CREDENTIALS
+from config import *
 from flask_marshmallow import Marshmallow
 from routes.owners import owners
 from routes.clients import clients
@@ -32,8 +32,14 @@ def create_app(test_config=None):
     # Permitir peticiones desde tu frontend Quasar 
     # y permitir todos los métodos y headers (incluyendo el Authorization JWT)
     url_front = f"{FRONT_URL}:{FRONT_PORT}"
-    #print(url_front)
     CORS(app, resources={r"/*": {"origins": url_front}})
+    
+    # CORS(
+    #     app, 
+    #     resources={r"/*": {"origins": url_front}},
+    #     allow_headers=["Authorization", "Content-Type"], 
+    #     supports_credentials=True # Si usas cookies/sesiones más adelante
+    # )
     # Si quieres permitir cualquier origen (solo para desarrollo):
     #CORS(app, resources={r"/*": {"origins": "*"}}) 
     
@@ -46,9 +52,17 @@ def create_app(test_config=None):
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     
     # --- CONFIGURACIÓN DE SEGURIDAD (JWT) ---
-    app.config["JWT_SECRET_KEY"] = JWT_SECRET_KEY
-    app.config["JWT_ACCESS_TOKEN_EXPIRES"] = datetime.timedelta(hours=24)
+    secret_key_limpia = JWT_SECRET_KEY.strip()
+    app.config["JWT_SECRET_KEY"] = secret_key_limpia
+    app.config["JWT_ACCESS_TOKEN_EXPIRES"] = JWT_ACCESS_TOKEN_EXPIRES
+    app.config["JWT_REFRESH_TOKEN_EXPIRES"] = JWT_REFRESH_TOKEN_EXPIRES
     
+    # app.py (dentro de create_app, junto a las otras configs JWT)
+    app.config["JWT_COOKIE_SECURE"] = False  # Si usas cookies
+    app.config["JWT_COOKIE_SAMESITE"] = "Lax" # Si usas cookies
+
+    # 🚨 TEMPORAL: Desactivar la protección CSRF (si aplica)
+    app.config["JWT_COOKIE_CSRF_PROTECT"] = False
     
     if test_config:
         # Si se pasa una configuración de prueba, la usamos. 
